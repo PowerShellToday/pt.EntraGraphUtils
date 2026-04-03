@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PlatyPS
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PlatyPS -Scope CurrentUser -Force
+
+      - name: Run dev module tests
+        shell: pwsh
+        run: |
+          $cfg = New-PesterConfiguration
+          $cfg.Run.Path                    = './tests'
+          $cfg.Run.PassThru                = $true
+          $cfg.Output.Verbosity            = 'Detailed'
+          $cfg.TestResult.Enabled          = $true
+          $cfg.TestResult.OutputPath       = 'testResults-dev.xml'
+          $cfg.CodeCoverage.Enabled        = $true
+          $cfg.CodeCoverage.Path           = @('./src/public', './src/private')
+          $cfg.CodeCoverage.OutputFormat   = 'JaCoCo'
+          $cfg.CodeCoverage.OutputPath     = 'coverage.xml'
+          $result = Invoke-Pester -Configuration $cfg
+          if ($result.FailedCount -gt 0) { exit 1 }
+
+      - name: Upload coverage to Codecov
+        if: matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+
+      - name: Build and test compiled output
+        shell: pwsh
+        run: ./build.ps1 -Version '0.0.0' -Test
+
+      - name: Upload dev test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-dev-${{ matrix.os }}
+          path: testResults-dev.xml
+
+      - name: Upload compiled test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-compiled-${{ matrix.os }}
+          path: testResults-compiled.xml
+
+      - name: Upload dist artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: dist/

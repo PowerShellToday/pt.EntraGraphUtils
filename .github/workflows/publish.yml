@@ -1,0 +1,86 @@
+name: Publish to PowerShell Gallery
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g. 0.0.1-test)'
+        required: true
+        default: '0.0.1-test'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate semver from release tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = if ('${{ github.event.inputs.version }}') {
+              '${{ github.event.inputs.version }}'
+          } else {
+              '${{ github.ref_name }}' -replace '^v', ''
+          }
+          if ($tag -notmatch '^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$') {
+            Write-Error "Tag '$tag' is not a valid semver. Expected format: 1.2.3 or v1.2.3"
+            exit 1
+          }
+          Write-Host "Version: $tag"
+          "version=$tag" | Out-File $env:GITHUB_OUTPUT -Append
+
+      - name: Install PlatyPS
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PlatyPS -Scope CurrentUser -Force
+
+      - name: Build module
+        shell: pwsh
+        run: ./build.ps1 -Version '${{ steps.version.outputs.version }}'
+
+      - name: Validate manifest
+        shell: pwsh
+        run: |
+          $manifest = Test-ModuleManifest -Path './dist/pt.EntraGraphUtils/pt.EntraGraphUtils.psd1'
+          if (-not $manifest) {
+            Write-Error "Manifest validation failed."
+            exit 1
+          }
+          Write-Host "Manifest OK — v$($manifest.Version)"
+
+      - name: Publish to GitHub Packages
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $owner   = '${{ github.repository_owner }}'.ToLower()
+          $feedUrl = "https://nuget.pkg.github.com/$owner/index.json"
+          $cred    = [PSCredential]::new(
+              '${{ github.actor }}',
+              (ConvertTo-SecureString $env:GITHUB_TOKEN -AsPlainText -Force)
+          )
+          Register-PSRepository -Name 'GitHubPackages' `
+              -SourceLocation    $feedUrl `
+              -PublishLocation   $feedUrl `
+              -InstallationPolicy Trusted `
+              -Credential        $cred
+          Publish-Module -Path './dist/pt.EntraGraphUtils' `
+              -Repository  'GitHubPackages' `
+              -NuGetApiKey $env:GITHUB_TOKEN `
+              -Credential  $cred `
+              -Verbose
+
+      # - name: Publish to PSGallery
+      #   shell: pwsh
+      #   env:
+      #     PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+      #   run: |
+      #     Publish-Module -Path './dist/pt.EntraGraphUtils' -NuGetApiKey $env:PSGALLERY_API_KEY -Verbose

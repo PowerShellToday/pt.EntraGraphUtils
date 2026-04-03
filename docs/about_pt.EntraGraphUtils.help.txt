@@ -1,0 +1,70 @@
+TOPIC
+    about_pt.EntraGraphUtils
+
+SHORT DESCRIPTION
+    Module overview and usage notes for pt.EntraGraphUtils.
+
+LONG DESCRIPTION
+    pt.EntraGraphUtils provides a thin, consistent layer over the Microsoft Graph REST API.
+    It is designed for scripts and automation that need to query or modify Entra ID resources
+    at scale, with built-in support for batching, retry handling, pagination, and multi-cloud
+    environments.
+
+    EXPORTED FUNCTIONS
+
+    New-ptGraphRequestItem
+        Creates a properly formatted Graph API request object. Accepts a relative URL,
+        HTTP method, optional body, OData query parameters ($filter, $select, $top, etc.),
+        and custom headers. The output is consumed by Invoke-ptGraphRequest or
+        Invoke-ptGraphBatchRequest.
+
+    Invoke-ptGraphRequest
+        Executes one or more Graph API requests one at a time. Handles rate limiting (HTTP 429)
+        with automatic retry, and supports pagination modes: 'auto' (follow all pages),
+        'none' (first page only), or unset (first page + warning). Supports Standard,
+        GroupById, and RawOutput parameter sets.
+
+    Invoke-ptGraphBatchRequest
+        Executes up to 20 Graph API requests per HTTP call using Graph JSON batching.
+        Ideal for bulk lookups or writes where the requests are independent. Handles 429
+        retry, pagination, and provides the same three output modes as Invoke-ptGraphRequest.
+        See about_pt.EntraGraphUtils_GraphBatching for a full explanation of batching.
+
+    PREREQUISITES
+
+        Install-Module Microsoft.Graph.Authentication -Scope CurrentUser
+        Connect-MgGraph -Scopes '<scopes required by your endpoints>'
+
+    The required scopes depend on which Graph endpoints you call. Refer to the Microsoft
+    Graph permissions reference for the correct scopes per endpoint.
+
+    SUPPORTED CLOUD ENVIRONMENTS
+
+    All functions accept a -GraphBaseUri parameter with the following valid values:
+        https://graph.microsoft.com            (default -- commercial)
+        https://graph.microsoft.us             (GCC High / US Government)
+        https://dod-graph.microsoft.us         (DoD)
+        https://graph.microsoft.de             (Germany)
+        https://microsoftgraph.chinacloudapi.cn  (China / 21Vianet)
+
+    DOCUMENTATION WORKFLOW
+
+    - Run ./docs.ps1 -Generate  to create per-command Markdown in docs/
+    - Run ./docs.ps1 -Update    to refresh Markdown from updated comment-based help
+    - Run ./docs.ps1 -BuildHelp to compile MAML XML to en-US/ for preview
+
+    BUILD WORKFLOW
+
+    - Run ./build-singlefile.ps1   for a fast single-file build (no tests)
+    - Run ./build.ps1              for the full build (includes PlatyPS docs pass)
+    - Run ./build.ps1 -Test        for the full build plus Pester test suite
+
+    COMMAND HELP
+
+    Get-Help New-ptGraphRequestItem                 -Full
+    Get-Help Invoke-ptGraphRequest                  -Full
+    Get-Help Invoke-ptGraphBatchRequest             -Full
+    Get-Help about_pt.EntraGraphUtils_GraphBatching -Full
+
+KEYWORDS
+    Graph, MicrosoftGraph, Entra, EntraID, AzureAD, REST, API, Batch, JsonBatching

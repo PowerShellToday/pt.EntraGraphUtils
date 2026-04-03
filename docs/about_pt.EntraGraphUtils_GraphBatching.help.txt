@@ -1,0 +1,144 @@
+TOPIC
+    about_pt.EntraGraphUtils_GraphBatching
+
+SHORT DESCRIPTION
+    How and why to use Microsoft Graph JSON batching with Invoke-ptGraphBatchRequest.
+
+LONG DESCRIPTION
+
+  WHAT IS GRAPH JSON BATCHING?
+
+    Microsoft Graph supports a special endpoint -- POST /{version}/$batch -- that accepts
+    up to 20 individual API sub-requests bundled into a single HTTP call. Graph executes all
+    sub-requests server-side and returns a single response payload containing the results of
+    each one. This is called JSON batching.
+
+    Reference: https://learn.microsoft.com/graph/json-batching
+
+
+  WHY USE BATCHING?
+
+    1. Fewer HTTP round trips
+       Each HTTP call has fixed overhead: TLS handshake amortisation, network latency,
+       server-side queuing. With 20 requests per batch you can reduce the number of outbound
+       calls by up to 95%, which translates directly into faster scripts.
+
+    2. Lower throttling risk
+       Microsoft Graph enforces per-application and per-user throttle limits measured in
+       requests per second. Batching counts as ONE request from the HTTP-call perspective,
+       so you can issue far more logical Graph operations within the same rate window.
+       Note: individual sub-requests inside a batch still consume service-side quota; batching
+       does not bypass Graph service throttling, it only reduces client-side call frequency.
+
+    3. Simpler parallelism without threading complexity
+       Collecting results from 100 independent lookups normally requires either a loop
+       (slow) or PowerShell jobs/runspaces (complex). Batching lets you fan out up to 20
+       requests per call with a plain array -- no threads needed.
+
+    4. Practical scenarios where batching shines
+       - Fetch properties for a list of user UPNs or object IDs
+       - Enumerate members of many groups in one pass
+       - Bulk-read settings or license details for a large user set
+       - Run mixed read/write operations (GET + PATCH) in one call
+
+
+  HOW Invoke-ptGraphBatchRequest WORKS
+
+    Step 1 -- Build request items with New-ptGraphRequestItem:
+
+        $items = @(
+            New-ptGraphRequestItem -id 'user1' -url '/users/alice@contoso.com'
+            New-ptGraphRequestItem -id 'user2' -url '/users/bob@contoso.com'
+            New-ptGraphRequestItem -id 'grp'   -url '/groups' -pageSize 50
+        )
+
+    Step 2 -- Pass the array to Invoke-ptGraphBatchRequest:
+
+        Invoke-ptGraphBatchRequest -BatchItems $items -pagination auto
+
+    Internally the function:
+    - Places all items in a thread-safe queue
+    - Drains the queue in chunks of up to -BatchSize (default 20)
+    - POSTs each chunk to /{ApiVersion}/$batch
+    - For each sub-response:
+        - HTTP 429 (rate limit): records the retry-after delay, re-queues the item, and
+          sleeps for the required duration before the next batch
+        - HTTP 2xx: extracts the body and outputs results (or follows @odata.nextLink
+          if pagination is 'auto')
+        - Other errors: writes a non-terminating error and continues
+
+
+  OUTPUT MODES
+
+    Standard (default)
+        Each result object is emitted to the pipeline individually. Use with -pagination auto
+        to stream all pages as objects arrive. Optionally add -EnrichOutput to attach a
+        '@batchMetadata' property (requestId + OData context) to each item.
+
+    GroupById (-GroupById switch)
+        Returns a hashtable keyed by request ID. Each key maps to an array containing all
+        result objects for that sub-request (pagination is always 'auto' in this mode).
+
+            $r = Invoke-ptGraphBatchRequest -BatchItems $items -GroupById
+            $r['user1']   # properties for alice
+            $r['grp']     # all group objects
+
+    RawOutput (-RawOutput switch)
+        Returns the complete batch response objects from Graph without unpacking the body.
+        Useful when you need HTTP status codes, headers, or response metadata.
+
+
+  PAGINATION IN BATCHES
+
+    When a sub-request returns an @odata.nextLink the function updates that item's URL
+    and keeps it in the processing loop until all pages are consumed (pagination 'auto'),
+    or removes the item after the first page (pagination 'none'), or removes it and emits
+    a warning (default, no -pagination specified).
+
+
+  DEPENDENCY ORDERING
+
+    When one sub-request depends on the result of another within the same batch, pass the
+    prerequisite request's ID to -dependsOn:
+
+        $create = New-ptGraphRequestItem -id 'new-grp' -url '/groups' -method POST -body @{
+            displayName     = 'Temp Group'
+            mailEnabled     = $false
+            securityEnabled = $true
+            mailNickname    = 'tempgrp'
+        }
+        $read = New-ptGraphRequestItem -id 'read-grp' -url '/groups/new-grp' -dependsOn 'new-grp'
+
+        Invoke-ptGraphBatchRequest -BatchItems @($create, $read)
+
+    Graph will not execute 'read-grp' until 'new-grp' has completed successfully.
+
+
+  BATCH vs INDIVIDUAL REQUESTS -- WHEN TO USE WHICH
+
+    Use Invoke-ptGraphBatchRequest when:
+    - You have 2 or more independent requests to make
+    - You are iterating over a list (users, groups, devices) and fetching properties
+    - Throughput or latency matters
+
+    Use Invoke-ptGraphRequest when:
+    - You have a single request
+    - Requests are sequential and each depends on the previous result
+    - Simplicity is more important than throughput
+
+
+  EXAMPLE: LOOK UP 40 USERS IN TWO BATCH CALLS
+
+    $upns = 1..40 | ForEach-Object { "user$_@contoso.com" }
+
+    $items = $upns | ForEach-Object {
+        New-ptGraphRequestItem -id $_ -url "/users/$_" -Property 'id,displayName,mail'
+    }
+
+    # 40 items -> 2 batches of 20 -> 2 HTTP calls instead of 40
+    $results = Invoke-ptGraphBatchRequest -BatchItems $items -GroupById
+
+    $results.Keys | ForEach-Object { $results[$_] }
+
+KEYWORDS
+    Batch, JsonBatching, Graph, MicrosoftGraph, Throttling, Performance, Pagination
