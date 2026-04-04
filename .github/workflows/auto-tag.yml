@@ -1,0 +1,51 @@
+name: Auto-tag on merge
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    name: Create version tag
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Read ModuleVersion + Prerelease from the manifest to reconstruct the
+      # full version string, e.g. '1.0.0' or '1.0.0-rc1'
+      - name: Read version from manifest
+        id: version
+        shell: pwsh
+        run: |
+          $manifest = Import-PowerShellDataFile './src/pt.EntraGraphUtils.psd1'
+          $semver   = $manifest.ModuleVersion
+          $pre      = $manifest.PrivateData.PSData.Prerelease
+          $full     = if ($pre) { "$semver-$pre" } else { $semver }
+          $tag      = "v$full"
+          Write-Host "Version: $full  Tag: $tag"
+          "tag=$tag"      | Out-File $env:GITHUB_OUTPUT -Append
+          "version=$full" | Out-File $env:GITHUB_OUTPUT -Append
+
+      # Skip silently if the tag already exists — handles pushes that don't
+      # bump the version (doc fixes, CI tweaks, etc.)
+      - name: Check if tag already exists
+        id: check
+        run: |
+          if git ls-remote --tags origin "refs/tags/${{ steps.version.outputs.tag }}" | grep -q .; then
+            echo "Tag ${{ steps.version.outputs.tag }} already exists — skipping."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create and push tag
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"

@@ -1,0 +1,301 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#060C1A"/>
+      <stop offset="100%" stop-color="#0D1117"/>
+    </linearGradient>
+    <linearGradient id="accentBar" x1="0" y1="0" x2="0" y2="640" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00BCFF"/>
+      <stop offset="50%" stop-color="#0078D4"/>
+      <stop offset="100%" stop-color="#003580"/>
+    </linearGradient>
+    <linearGradient id="titleGrad" x1="60" y1="0" x2="560" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#79C0FF"/>
+    </linearGradient>
+    <linearGradient id="termBg" x1="0" y1="52" x2="0" y2="592" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1A2235"/>
+      <stop offset="100%" stop-color="#0C1120"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="270" cy="235" r="310" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#012456" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#012456" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="nodeGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="640" fill="url(#bg)"/>
+
+  <!-- Blue radial halo behind title area -->
+  <ellipse cx="270" cy="235" rx="350" ry="220" fill="url(#halo)"/>
+
+  <!-- Left accent bar -->
+  <rect x="0" y="0" width="5" height="640" fill="url(#accentBar)"/>
+
+  <!-- ──────────────────────────────── -->
+  <!-- GRAPH NETWORK DECORATION        -->
+  <!-- ──────────────────────────────── -->
+  <g>
+    <g opacity="0.28" stroke="#0078D4" stroke-width="1.5" fill="none">
+      <line x1="510" y1="85" x2="548" y2="145"/>
+      <line x1="548" y1="145" x2="506" y2="207"/>
+      <line x1="506" y1="207" x2="552" y2="272"/>
+      <line x1="552" y1="272" x2="511" y2="340"/>
+      <line x1="511" y1="340" x2="557" y2="400"/>
+      <line x1="557" y1="400" x2="516" y2="462"/>
+      <line x1="516" y1="462" x2="547" y2="528"/>
+    </g>
+    <g opacity="0.13" stroke="#00BCF2" stroke-width="1" fill="none">
+      <line x1="510" y1="85" x2="506" y2="207"/>
+      <line x1="548" y1="145" x2="552" y2="272"/>
+      <line x1="506" y1="207" x2="511" y2="340"/>
+      <line x1="552" y1="272" x2="557" y2="400"/>
+      <line x1="511" y1="340" x2="516" y2="462"/>
+      <line x1="476" y1="172" x2="510" y2="85"/>
+      <line x1="476" y1="172" x2="506" y2="207"/>
+      <line x1="481" y1="388" x2="511" y2="340"/>
+      <line x1="481" y1="388" x2="557" y2="400"/>
+    </g>
+    <circle cx="510" cy="85"  r="6" fill="#0078D4" opacity="0.85" filter="url(#nodeGlow)"/>
+    <circle cx="548" cy="145" r="4" fill="#00BCF2" opacity="0.75"/>
+    <circle cx="506" cy="207" r="6" fill="#0078D4" opacity="0.65" filter="url(#nodeGlow)"/>
+    <circle cx="552" cy="272" r="4" fill="#00BCF2" opacity="0.75"/>
+    <circle cx="511" cy="340" r="6" fill="#0078D4" opacity="0.65" filter="url(#nodeGlow)"/>
+    <circle cx="557" cy="400" r="4" fill="#00BCF2" opacity="0.65"/>
+    <circle cx="516" cy="462" r="5" fill="#0078D4" opacity="0.55" filter="url(#nodeGlow)"/>
+    <circle cx="547" cy="528" r="4" fill="#00BCF2" opacity="0.45"/>
+    <circle cx="476" cy="172" r="3" fill="#0078D4" opacity="0.45"/>
+    <circle cx="481" cy="388" r="3" fill="#0078D4" opacity="0.45"/>
+  </g>
+
+  <!-- ──────────────────────────────── -->
+  <!-- LEFT CONTENT                     -->
+  <!-- ──────────────────────────────── -->
+
+  <!-- Decorative PS prompt -->
+  <text x="60" y="90"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="18" fill="#0078D4" opacity="0.75">PS &gt;</text>
+
+  <!-- "pt." large monospace -->
+  <text x="60" y="192"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="78" font-weight="700" fill="#0078D4">pt.</text>
+
+  <!-- "EntraGraphUtils" main title -->
+  <text x="60" y="270"
+        font-family="'Segoe UI', 'Arial', 'Helvetica Neue', sans-serif"
+        font-size="62" font-weight="800" fill="url(#titleGrad)">EntraGraphUtils</text>
+
+  <!-- Accent underline -->
+  <rect x="60" y="283" width="425" height="3" rx="1.5" fill="url(#accentBar)" opacity="0.65"/>
+
+  <!-- Tagline -->
+  <text x="60" y="316"
+        font-family="'Segoe UI', Arial, sans-serif"
+        font-size="18" fill="#8B949E">PowerShell utilities for the Microsoft Graph API</text>
+
+  <!-- Function 1 -->
+  <rect x="60" y="348" width="3" height="44" rx="1.5" fill="#0078D4"/>
+  <text x="73" y="367"
+        font-family="'Cascadia Code', Consolas, monospace"
+        font-size="15" fill="#79C0FF">Invoke-ptGraphRequest</text>
+  <text x="73" y="383"
+        font-family="'Segoe UI', Arial, sans-serif"
+        font-size="12.5" fill="#6E7681">Individual requests · retry &amp; pagination</text>
+
+  <!-- Function 2 -->
+  <rect x="60" y="402" width="3" height="44" rx="1.5" fill="#00BCF2"/>
+  <text x="73" y="421"
+        font-family="'Cascadia Code', Consolas, monospace"
+        font-size="15" fill="#79C0FF">Invoke-ptGraphBatchRequest</text>
+  <text x="73" y="437"
+        font-family="'Segoe UI', Arial, sans-serif"
+        font-size="12.5" fill="#6E7681">Auto-batch up to 20 requests per API call</text>
+
+  <!-- Function 3 -->
+  <rect x="60" y="456" width="3" height="44" rx="1.5" fill="#0078D4"/>
+  <text x="73" y="475"
+        font-family="'Cascadia Code', Consolas, monospace"
+        font-size="15" fill="#79C0FF">New-ptGraphRequestItem</text>
+  <text x="73" y="491"
+        font-family="'Segoe UI', Arial, sans-serif"
+        font-size="12.5" fill="#6E7681">Fluent builder · OData · URL parameter support</text>
+
+  <!-- Bottom branding -->
+  <line x1="60" y1="568" x2="410" y2="568" stroke="#21262D" stroke-width="1"/>
+  <text x="60" y="589"
+        font-family="'Segoe UI', Arial, sans-serif"
+        font-size="13" font-weight="600" fill="#2D3748" letter-spacing="2.5">POWERSHELLTODAY</text>
+  <text x="60" y="610"
+        font-family="'Segoe UI', Arial, sans-serif"
+        font-size="11" fill="#21262D">github.com/PowerShellToday/pt.EntraGraphUtils</text>
+
+  <!-- ──────────────────────────────── -->
+  <!-- RIGHT: CODE TERMINAL             -->
+  <!-- ──────────────────────────────── -->
+
+  <!-- Drop shadow -->
+  <rect x="635" y="60" width="612" height="540" rx="14" fill="#000000" opacity="0.4"/>
+
+  <!-- Terminal body -->
+  <rect x="628" y="52" width="612" height="540" rx="14"
+        fill="url(#termBg)" stroke="#30363D" stroke-width="1"/>
+
+  <!-- Header bar -->
+  <rect x="628" y="52" width="612" height="46" rx="14" fill="#21262D"/>
+  <rect x="628" y="76" width="612" height="22" fill="#21262D"/>
+  <line x1="628" y1="98" x2="1240" y2="98" stroke="#30363D" stroke-width="1"/>
+
+  <!-- Traffic lights -->
+  <circle cx="661" cy="76" r="7" fill="#FF5F57"/>
+  <circle cx="686" cy="76" r="7" fill="#FEBC2E"/>
+  <circle cx="711" cy="76" r="7" fill="#28C840"/>
+
+  <!-- Terminal title -->
+  <text x="934" y="81"
+        font-family="'Segoe UI', Arial, sans-serif"
+        font-size="12" fill="#6E7681" text-anchor="middle">PowerShell 7 · pt.EntraGraphUtils</text>
+
+  <!-- Status bar -->
+  <line x1="628" y1="562" x2="1240" y2="562" stroke="#30363D" stroke-width="1"/>
+  <rect x="628" y="562" width="612" height="30" fill="#161B22"/>
+  <rect x="628" y="574" width="612" height="18" rx="10" fill="#161B22"/>
+  <rect x="628" y="562" width="612" height="18" fill="#161B22"/>
+  <circle cx="648" cy="577" r="5" fill="#28C840" opacity="0.9"/>
+  <text x="661" y="581"
+        font-family="'Segoe UI', Arial, sans-serif" font-size="11" fill="#6E7681">pwsh 7.5</text>
+  <text x="755" y="581"
+        font-family="'Segoe UI', Arial, sans-serif" font-size="11" fill="#30363D">main</text>
+  <text x="1232" y="581"
+        font-family="'Segoe UI', Arial, sans-serif" font-size="11" fill="#6E7681"
+        text-anchor="end">UTF-8</text>
+
+  <!-- ── CODE CONTENT ── -->
+  <!-- font: 13.5px monospace, ~8.1px/char, line-height: 28px -->
+
+  <!-- PS C:\> -->
+  <text x="650" y="130"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="13.5" fill="#0078D4">PS C:\&gt;</text>
+
+  <!-- # comment -->
+  <text x="650" y="162"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="13.5" fill="#6E7681"># Build 50 Graph requests and batch them</text>
+
+  <!-- $items = 1..50 | ForEach-Object { -->
+  <text x="650" y="190"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="13.5">
+    <tspan fill="#FFA657">$items</tspan>
+    <tspan fill="#F0F6FC"> = </tspan>
+    <tspan fill="#79C0FF">1..50</tspan>
+    <tspan fill="#F0F6FC"> | </tspan>
+    <tspan fill="#FF7B72">ForEach-Object</tspan>
+    <tspan fill="#F0F6FC"> {</tspan>
+  </text>
+
+  <!--     New-ptGraphRequestItem ` -->
+  <text x="650" y="218"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="13.5">
+    <tspan fill="#F0F6FC">    </tspan>
+    <tspan fill="#79C0FF">New-ptGraphRequestItem</tspan>
+    <tspan fill="#FF7B72"> `</tspan>
+  </text>
+
+  <!--         -Method GET ` -->
+  <text x="650" y="246"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="13.5">
+    <tspan fill="#F0F6FC">        </tspan>
+    <tspan fill="#D2A8FF">-Method</tspan>
+    <tspan fill="#F0F6FC"> </tspan>
+    <tspan fill="#79C0FF">GET</tspan>
+    <tspan fill="#FF7B72"> `</tspan>
+  </text>
+
+  <!--         -Url "users/$_/memberOf" ` -->
+  <text x="650" y="274"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="13.5">
+    <tspan fill="#F0F6FC">        </tspan>
+    <tspan fill="#D2A8FF">-Url</tspan>
+    <tspan fill="#F0F6FC"> </tspan>
+    <tspan fill="#A5D6FF">"users/</tspan>
+    <tspan fill="#FFA657">$_</tspan>
+    <tspan fill="#A5D6FF">/memberOf"</tspan>
+    <tspan fill="#FF7B72"> `</tspan>
+  </text>
+
+  <!--         -Filter "accountEnabled eq true" -->
+  <text x="650" y="302"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="13.5">
+    <tspan fill="#F0F6FC">        </tspan>
+    <tspan fill="#D2A8FF">-Filter</tspan>
+    <tspan fill="#F0F6FC"> </tspan>
+    <tspan fill="#A5D6FF">"accountEnabled eq true"</tspan>
+  </text>
+
+  <!-- } -->
+  <text x="650" y="330"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="13.5" fill="#F0F6FC">}</text>
+
+  <!-- blank line at y=358 -->
+
+  <!-- $results = Invoke-ptGraphBatchRequest ` -->
+  <text x="650" y="372"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="13.5">
+    <tspan fill="#FFA657">$results</tspan>
+    <tspan fill="#F0F6FC"> = </tspan>
+    <tspan fill="#79C0FF">Invoke-ptGraphBatchRequest</tspan>
+    <tspan fill="#FF7B72"> `</tspan>
+  </text>
+
+  <!--     -Requests $items -->
+  <text x="650" y="400"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="13.5">
+    <tspan fill="#F0F6FC">    </tspan>
+    <tspan fill="#D2A8FF">-Requests</tspan>
+    <tspan fill="#F0F6FC"> </tspan>
+    <tspan fill="#FFA657">$items</tspan>
+  </text>
+
+  <!-- blank line at y=428 -->
+
+  <!-- output comment -->
+  <text x="650" y="442"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="13.5" fill="#6E7681"># → 3 batches · 50 requests · auto-paginated</text>
+
+  <!-- $results.Count -->
+  <text x="650" y="470"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="13.5">
+    <tspan fill="#FFA657">$results</tspan>
+    <tspan fill="#8B949E">.Count</tspan>
+  </text>
+
+  <!-- 50 -->
+  <text x="650" y="498"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="13.5" fill="#79C0FF">50</text>
+
+  <!-- blank line at y=526 -->
+
+  <!-- PS C:\> + blinking cursor -->
+  <text x="650" y="540"
+        font-family="'Cascadia Code', Consolas, 'Courier New', monospace"
+        font-size="13.5" fill="#0078D4">PS C:\&gt;</text>
+  <rect x="716" y="527" width="8" height="15" fill="#F0F6FC" opacity="0.85"/>
+
+</svg>

@@ -76,8 +76,8 @@
 
 .EXAMPLE
     $requests = @(
-        [PSCustomObject]@{ id = "1"; url = "users" },
-        [PSCustomObject]@{ id = "2"; url = "groups" }
+        New-ptGraphRequestItem -id "1" -url "/users"
+        New-ptGraphRequestItem -id "2" -url "/groups"
     )
     Invoke-ptGraphBatchRequest -BatchItems $requests
 
@@ -86,8 +86,8 @@
 
 .EXAMPLE
     $requests = @(
-        [PSCustomObject]@{ id = "users"; url = "users" },
-        [PSCustomObject]@{ id = "groups"; url = "groups" }
+        New-ptGraphRequestItem -id "users"  -url "/users"
+        New-ptGraphRequestItem -id "groups" -url "/groups"
     )
     $results = Invoke-ptGraphBatchRequest -BatchItems $requests -GroupById
     $results["users"]  # All user objects
@@ -104,8 +104,8 @@
 
 .EXAMPLE
     $largeRequests = @(
-        [PSCustomObject]@{ id = "all-users"; url = "users" },
-        [PSCustomObject]@{ id = "all-groups"; url = "groups" }
+        New-ptGraphRequestItem -id "all-users"  -url "/users"
+        New-ptGraphRequestItem -id "all-groups" -url "/groups"
     )
     Invoke-ptGraphBatchRequest -BatchItems $largeRequests -pagination 'auto'
 
@@ -125,8 +125,8 @@
 
 .EXAMPLE
     $requests = @(
-        [PSCustomObject]@{ id = "users"; url = "users" },
-        [PSCustomObject]@{ id = "groups"; url = "groups" }
+        New-ptGraphRequestItem -id "users"  -url "/users"
+        New-ptGraphRequestItem -id "groups" -url "/groups"
     )
     $results = Invoke-ptGraphBatchRequest -BatchItems $requests -EnrichOutput -pagination 'auto'
     $results | Select-Object displayName, '@batchMetadata'

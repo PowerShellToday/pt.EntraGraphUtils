@@ -2,9 +2,14 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
   pull_request:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -23,7 +28,6 @@ jobs:
       - name: Install PlatyPS
         shell: pwsh
         run: |
-          Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module PlatyPS -Scope CurrentUser -Force
 
       - name: Run dev module tests
