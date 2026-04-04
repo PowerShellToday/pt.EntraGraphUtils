@@ -2,8 +2,7 @@ name: Publish to PowerShell Gallery
 
 on:
   push:
-    tags:
-      - 'v[0-9]*.[0-9]*.[0-9]*'
+    branches: [main]
   workflow_dispatch:
     inputs:
       version:
@@ -13,40 +12,69 @@ on:
 
 jobs:
   publish:
+    name: Tag and publish
     runs-on: ubuntu-latest
     permissions:
       packages: write
-      contents: read
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate semver from release tag
+      # Step 1 — Determine version from manifest or manual input
+      - name: Read version
         id: version
         shell: pwsh
         run: |
-          $tag = if ('${{ github.event.inputs.version }}') {
-              '${{ github.event.inputs.version }}'
+          if ('${{ github.event.inputs.version }}') {
+            $full = '${{ github.event.inputs.version }}'
           } else {
-              '${{ github.ref_name }}' -replace '^v', ''
+            $manifest = Import-PowerShellDataFile './src/pt.EntraGraphUtils.psd1'
+            $semver   = $manifest.ModuleVersion
+            $pre      = $manifest.PrivateData.PSData.Prerelease
+            $full     = if ($pre) { "$semver-$pre" } else { $semver }
           }
-          if ($tag -notmatch '^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$') {
-            Write-Error "Tag '$tag' is not a valid semver. Expected format: 1.2.3 or v1.2.3"
+          if ($full -notmatch '^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$') {
+            Write-Error "Version '$full' is not valid semver. Expected format: 1.2.3 or 1.2.3-rc1"
             exit 1
           }
-          Write-Host "Version: $tag"
-          "version=$tag" | Out-File $env:GITHUB_OUTPUT -Append
+          Write-Host "Version: $full"
+          "version=$full" | Out-File $env:GITHUB_OUTPUT -Append
+          "tag=v$full"    | Out-File $env:GITHUB_OUTPUT -Append
 
-      - name: Install PlatyPS
-        shell: pwsh
+      # Step 2 — Skip if this version tag already exists (non-src push to main)
+      - name: Check if tag already exists
+        id: check
         run: |
-          Install-Module PlatyPS -Scope CurrentUser -Force
+          if git ls-remote --tags origin "refs/tags/${{ steps.version.outputs.tag }}" | grep -q .; then
+            echo "Tag ${{ steps.version.outputs.tag }} already exists — skipping publish."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Step 3 — Create and push tag
+      - name: Create version tag
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      # Step 4 — Build and publish
+      - name: Install PlatyPS
+        if: steps.check.outputs.skip == 'false'
+        shell: pwsh
+        run: Install-Module PlatyPS -Scope CurrentUser -Force
 
       - name: Build module
+        if: steps.check.outputs.skip == 'false'
         shell: pwsh
         run: ./build.ps1 -Version '${{ steps.version.outputs.version }}'
 
       - name: Validate manifest
+        if: steps.check.outputs.skip == 'false'
         shell: pwsh
         run: |
           $manifest = Test-ModuleManifest -Path './dist/pt.EntraGraphUtils/pt.EntraGraphUtils.psd1'
@@ -57,6 +85,7 @@ jobs:
           Write-Host "Manifest OK — v$($manifest.Version)"
 
       - name: Publish to GitHub Packages
+        if: steps.check.outputs.skip == 'false'
         shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -79,6 +108,7 @@ jobs:
               -Verbose
 
       # - name: Publish to PSGallery
+      #   if: steps.check.outputs.skip == 'false'
       #   shell: pwsh
       #   env:
       #     PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
