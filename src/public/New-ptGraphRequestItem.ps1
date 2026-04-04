@@ -152,7 +152,7 @@
     - Uses internal module functions ConvertFrom-QueryString and ConvertTo-QueryString for query parameter processing
 #>
 function New-ptGraphRequestItem {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='None')]
     param (
         [Parameter(Mandatory = $false)]
         [string]$id = [System.Guid]::NewGuid().ToString(),
