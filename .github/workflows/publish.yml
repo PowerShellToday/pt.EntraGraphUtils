@@ -19,7 +19,7 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # Step 1 — Determine version from manifest or manual input
       - name: Read version
