@@ -17,10 +17,11 @@ New-ptGraphRequestItem [[-id] <String>] [-url] <String> [[-method] <String>] [[-
  [[-body] <Object>] [[-dependsOn] <String>] [[-pageSize] <Int32>] [-Count] [[-ExpandProperty] <String>]
  [[-Filter] <String>] [[-Format] <String>] [[-Sort] <String>] [[-Search] <String>] [[-Property] <String[]>]
  [[-Skip] <Int32>] [[-skipToken] <String>] [[-QueryParameters] <Hashtable>] [[-ConsistencyLevel] <String>]
- [[-ContentType] <String>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [[-ContentType] <String>] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
+
 This helper function creates properly formatted Graph request items that can be used with
 the Invoke-GraphBatchRequest2 function or for individual Graph API requests.
 It supports 
@@ -400,6 +401,36 @@ Aliases:
 
 Required: False
 Position: 18
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WhatIf
+Shows what would happen if the cmdlet runs. The cmdlet is not run.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: wi
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Confirm
+Prompts you for confirmation before running the cmdlet.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: cf
+
+Required: False
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
