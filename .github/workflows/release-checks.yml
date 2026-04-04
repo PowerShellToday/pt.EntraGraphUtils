@@ -37,6 +37,7 @@ jobs:
 
       # Step 2 — PSScriptAnalyzer lint (runs on every PR, not just src/ changes)
       - name: PSScriptAnalyzer lint
+        if: steps.src_changed.outputs.changed == 'true'
         shell: pwsh
         run: |
           Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -ErrorAction Stop
