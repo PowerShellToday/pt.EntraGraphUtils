@@ -46,9 +46,11 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           # PR branch version (on disk)
-          $prData    = Import-PowerShellDataFile './src/pt.EntraGraphUtils.psd1'
-          $prVersion = [version]$prData.ModuleVersion
-          Write-Host "PR branch ModuleVersion:   $prVersion"
+          $prData       = Import-PowerShellDataFile './src/pt.EntraGraphUtils.psd1'
+          $prVersion    = [version]$prData.ModuleVersion
+          $prPrerelease = $prData.PrivateData.PSData.Prerelease
+          $prFull       = if ($prPrerelease) { "$prVersion-$prPrerelease" } else { "$prVersion" }
+          Write-Host "PR branch version: $prFull"
 
           # main branch version (via GitHub Contents API — avoids a second checkout)
           $apiUrl  = "https://api.github.com/repos/$env:REPO/contents/src/pt.EntraGraphUtils.psd1?ref=main"
@@ -63,19 +65,24 @@ jobs:
             exit 1
           }
           $mainVersion = [version]$Matches[1]
-          Write-Host "main branch ModuleVersion: $mainVersion"
+          $mainPrerelease = if ($mainContent -match "Prerelease\s*=\s*'([^']*)'") { $Matches[1] } else { '' }
+          $mainFull = if ($mainPrerelease) { "$mainVersion-$mainPrerelease" } else { "$mainVersion" }
+          Write-Host "main branch version: $mainFull"
 
-          if ($prVersion -le $mainVersion) {
+          $versionBumped    = $prVersion -gt $mainVersion
+          $prereleaseBumped = ($prVersion -eq $mainVersion) -and ($prPrerelease -ne $mainPrerelease)
+
+          if (-not ($versionBumped -or $prereleaseBumped)) {
             Write-Error @"
           Version bump required.
-            main branch : $mainVersion
-            PR branch   : $prVersion
-          ModuleVersion in src/pt.EntraGraphUtils.psd1 must be higher than the version on main.
+            main branch : $mainFull
+            PR branch   : $prFull
+          Either ModuleVersion or Prerelease in src/pt.EntraGraphUtils.psd1 must change.
           "@
             exit 1
           }
-          Write-Host "Version bump OK: $mainVersion --> $prVersion"
-          "new_version=$prVersion" | Out-File $env:GITHUB_OUTPUT -Append
+          Write-Host "Version bump OK: $mainFull --> $prFull"
+          "new_version=$prFull" | Out-File $env:GITHUB_OUTPUT -Append
 
       # Step 4 — CHANGELOG validation
       # Requires: [Unreleased] section present, versioned section exists and is non-empty
@@ -83,7 +90,7 @@ jobs:
         if: steps.src_changed.outputs.changed == 'true'
         shell: pwsh
         run: |
-          $newVersion = '${{ steps.version_check.outputs.new_version }}'
+          $newVersion = '${{ steps.version_check.outputs.new_version }}' -replace '-.*$', ''
           $content    = Get-Content ./CHANGELOG.md -Raw
           $lines      = Get-Content ./CHANGELOG.md
 
