@@ -1,0 +1,132 @@
+name: Release Gate-keeping
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  release-checks:
+    name: Release gate-keeping checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # needed for merge-base diff
+
+      # Step 1 — Detect whether any src/** file changed
+      # Uses merge-base (not base SHA) so new commits to main never cause false positives
+      - name: Detect src/ changes
+        id: src_changed
+        shell: pwsh
+        run: |
+          $base = git merge-base origin/main HEAD
+          $changedFiles = git diff --name-only $base HEAD
+          Write-Host "Changed files:`n$($changedFiles -join "`n")"
+
+          $srcChanged = $changedFiles | Where-Object { $_ -like 'src/*' }
+          if ($srcChanged) {
+            Write-Host "src/ changes detected."
+            "changed=true" | Out-File $env:GITHUB_OUTPUT -Append
+          } else {
+            Write-Host "No src/ changes — skipping version and changelog checks."
+            "changed=false" | Out-File $env:GITHUB_OUTPUT -Append
+          }
+
+      # Step 2 — PSScriptAnalyzer lint (runs on every PR, not just src/ changes)
+      - name: PSScriptAnalyzer lint
+        if: steps.src_changed.outputs.changed == 'true'
+        shell: pwsh
+        run: |
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -ErrorAction Stop
+
+          $results = Invoke-ScriptAnalyzer -Path ./src -Recurse -Severity Error, Warning
+          if ($results) {
+            $results | Format-Table -AutoSize
+            Write-Error "PSScriptAnalyzer found $($results.Count) issue(s)."
+            exit 1
+          }
+          Write-Host "PSScriptAnalyzer: no issues found."
+
+      # Step 3 — Version bump check
+      # PR branch version read from disk; main branch version fetched via GitHub Contents API
+      - name: Validate version bump
+        if: steps.src_changed.outputs.changed == 'true'
+        id: version_check
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          # PR branch version (on disk)
+          $prData    = Import-PowerShellDataFile './src/pt.EntraGraphUtils.psd1'
+          $prVersion = [version]$prData.ModuleVersion
+          Write-Host "PR branch ModuleVersion:   $prVersion"
+
+          # main branch version (via GitHub Contents API — avoids a second checkout)
+          $apiUrl  = "https://api.github.com/repos/$env:REPO/contents/src/pt.EntraGraphUtils.psd1?ref=main"
+          $headers = @{
+            Authorization = "Bearer $env:GITHUB_TOKEN"
+            Accept        = 'application/vnd.github.v3.raw'
+          }
+          $mainContent = Invoke-RestMethod -Uri $apiUrl -Headers $headers -ErrorAction Stop
+
+          if ($mainContent -notmatch "ModuleVersion\s*=\s*'([^']+)'") {
+            Write-Error "Could not parse ModuleVersion from main branch manifest."
+            exit 1
+          }
+          $mainVersion = [version]$Matches[1]
+          Write-Host "main branch ModuleVersion: $mainVersion"
+
+          if ($prVersion -le $mainVersion) {
+            Write-Error @"
+          Version bump required.
+            main branch : $mainVersion
+            PR branch   : $prVersion
+          ModuleVersion in src/pt.EntraGraphUtils.psd1 must be higher than the version on main.
+          "@
+            exit 1
+          }
+          Write-Host "Version bump OK: $mainVersion --> $prVersion"
+          "new_version=$prVersion" | Out-File $env:GITHUB_OUTPUT -Append
+
+      # Step 4 — CHANGELOG validation
+      # Requires: [Unreleased] section present, versioned section exists and is non-empty
+      - name: Validate CHANGELOG.md
+        if: steps.src_changed.outputs.changed == 'true'
+        shell: pwsh
+        run: |
+          $newVersion = '${{ steps.version_check.outputs.new_version }}'
+          $content    = Get-Content ./CHANGELOG.md -Raw
+          $lines      = Get-Content ./CHANGELOG.md
+
+          # [Unreleased] section must always be present (Keep a Changelog format)
+          if ($content -notmatch '## \[Unreleased\]') {
+            Write-Error "CHANGELOG.md is missing the '## [Unreleased]' section."
+            exit 1
+          }
+
+          # Versioned section for the new version must exist
+          if ($content -notmatch "## \[$([regex]::Escape($newVersion))\]") {
+            Write-Error @"
+          CHANGELOG.md has no section for version $newVersion.
+          Add a '## [$newVersion] - YYYY-MM-DD' header and move your entries from [Unreleased].
+          "@
+            exit 1
+          }
+
+          # That versioned section must not be empty
+          $headerIndex = ($lines | Select-String -SimpleMatch "## [$newVersion]").LineNumber - 1
+          $sectionLines = @()
+          for ($i = $headerIndex + 1; $i -lt $lines.Count; $i++) {
+            if ($lines[$i] -match '^## ') { break }
+            $sectionLines += $lines[$i]
+          }
+          if (-not ($sectionLines | Where-Object { $_.Trim() -ne '' })) {
+            Write-Error "The ## [$newVersion] section in CHANGELOG.md is empty. Add release notes."
+            exit 1
+          }
+
+          Write-Host "CHANGELOG.md OK — ## [$newVersion] section found with content."

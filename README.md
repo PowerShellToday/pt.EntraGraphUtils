@@ -6,6 +6,8 @@
 
 PowerShell utilities for the Microsoft Graph REST API — high-performance JSON batching, individual requests, and a fluent request-item builder.
 
+![Logo](./logo.svg)
+
 ## Installation
 
 ### PowerShell Gallery

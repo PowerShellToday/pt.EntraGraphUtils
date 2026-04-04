@@ -340,6 +340,32 @@ Describe 'Invoke-ptGraphBatchRequest' {
                 $Seconds -eq 2
             }
         }
+
+        It 'uses 15-second default delay when error message has no retry timing' {
+            $defaultRateLimitBody = [PSCustomObject]@{
+                error = [PSCustomObject]@{ message = 'TooManyRequests' }
+            }
+            $successBody = [PSCustomObject]@{
+                '@odata.context' = 'https://graph.microsoft.com/v1.0/$metadata#users'
+                value            = @([PSCustomObject]@{ id = 'u1'; displayName = 'Alice' })
+            }
+
+            $script:callCount = 0
+            Mock Invoke-MgGraphRequest {
+                $script:callCount++
+                if ($script:callCount -eq 1) {
+                    New-BatchResponse -Responses @(New-ResponseEntry -Id '1' -Status 429 -Body $defaultRateLimitBody)
+                }
+                else {
+                    New-BatchResponse -Responses @(New-ResponseEntry -Id '1' -Status 200 -Body $successBody)
+                }
+            } -ModuleName $ModuleName
+
+            Invoke-ptGraphBatchRequest -BatchItems $items -pagination 'none'
+            Should -Invoke Start-Sleep -ModuleName $ModuleName -Times 1 -ParameterFilter {
+                $Seconds -eq 15
+            }
+        }
     }
 
     # ------------------------------------------------------------------ #
@@ -448,6 +474,116 @@ Describe 'Invoke-ptGraphBatchRequest' {
         It 'writes a warning about additional pages' {
             Invoke-ptGraphBatchRequest -BatchItems $items -WarningVariable warnings 3>$null
             $warnings | Should -Match 'additional pages'
+        }
+    }
+
+    # ------------------------------------------------------------------ #
+    #  Batch execution failure                                             #
+    # ------------------------------------------------------------------ #
+    Context 'Batch execution failure' {
+        It 'throws when Invoke-MgGraphRequest itself throws during batch execution' {
+            Mock Invoke-MgGraphRequest { throw 'Connection refused' } -ModuleName $ModuleName
+
+            { Invoke-ptGraphBatchRequest -BatchItems @(New-BatchItem) -pagination 'none' -ErrorAction Stop } |
+            Should -Throw
+        }
+    }
+
+    # ------------------------------------------------------------------ #
+    #  Response with null body                                             #
+    # ------------------------------------------------------------------ #
+    Context 'Response with null body' {
+        It 'warns and skips a 200 response with no body' {
+            Mock Invoke-MgGraphRequest {
+                New-BatchResponse -Responses @(New-ResponseEntry -Id '1' -Status 200 -Body $null)
+            } -ModuleName $ModuleName
+
+            $items = @(New-BatchItem -Id '1' -Url 'users' -Method 'GET')
+            $result = Invoke-ptGraphBatchRequest -BatchItems $items -pagination 'none' `
+                -WarningVariable warnings 3>$null
+            $result | Should -BeNullOrEmpty
+            $warnings | Should -Match 'no body'
+        }
+    }
+
+    # ------------------------------------------------------------------ #
+    #  GroupById mode — non-array value responses                          #
+    # ------------------------------------------------------------------ #
+    Context 'GroupById mode — non-array value' {
+        BeforeEach {
+            $singleBody = [PSCustomObject]@{
+                '@odata.context' = 'https://graph.microsoft.com/v1.0/$metadata#users/$entity'
+                id               = 'u1'
+                displayName      = 'Alice'
+            }
+
+            Mock Invoke-MgGraphRequest {
+                New-BatchResponse -Responses @(New-ResponseEntry -Id '1' -Status 200 -Body $singleBody)
+            } -ModuleName $ModuleName
+        }
+
+        It 'collects a single non-array body directly in GroupById mode' {
+            $items = @(New-BatchItem -Id '1' -Url 'users/u1' -Method 'GET')
+            $result = Invoke-ptGraphBatchRequest -BatchItems $items -GroupById
+            $result['1'].Count | Should -Be 1
+            $result['1'][0].displayName | Should -Be 'Alice'
+        }
+
+        It 'enriches a non-array body in GroupById mode when EnrichOutput is used' {
+            $items = @(New-BatchItem -Id '1' -Url 'users/u1' -Method 'GET')
+            $result = Invoke-ptGraphBatchRequest -BatchItems $items -GroupById -EnrichOutput
+            $result['1'][0].'@batchMetadata'.requestId | Should -Be '1'
+        }
+    }
+
+    # ------------------------------------------------------------------ #
+    #  Standard mode — non-array value responses                           #
+    # ------------------------------------------------------------------ #
+    Context 'Standard mode — non-array value' {
+        BeforeEach {
+            $bodyWithScalarValue = [PSCustomObject]@{
+                '@odata.context' = 'https://graph.microsoft.com/v1.0/$metadata#users'
+                value            = [PSCustomObject]@{ id = 'u1'; displayName = 'Alice' }
+            }
+
+            Mock Invoke-MgGraphRequest {
+                New-BatchResponse -Responses @(New-ResponseEntry -Id '1' -Status 200 -Body $bodyWithScalarValue)
+            } -ModuleName $ModuleName
+        }
+
+        It 'outputs a single non-array value property in standard mode' {
+            $items = @(New-BatchItem -Id '1' -Url 'users' -Method 'GET')
+            $result = Invoke-ptGraphBatchRequest -BatchItems $items -pagination 'none'
+            $result.id | Should -Be 'u1'
+        }
+
+        It 'enriches a single non-array value in standard mode when EnrichOutput is used' {
+            $items = @(New-BatchItem -Id '1' -Url 'users' -Method 'GET')
+            $result = Invoke-ptGraphBatchRequest -BatchItems $items -EnrichOutput -pagination 'none'
+            $result.'@batchMetadata' | Should -Not -BeNullOrEmpty
+            $result.'@batchMetadata'.requestId | Should -Be '1'
+        }
+    }
+
+    # ------------------------------------------------------------------ #
+    #  Standard mode — single entity with EnrichOutput                     #
+    # ------------------------------------------------------------------ #
+    Context 'Standard mode — single entity with EnrichOutput' {
+        It 'enriches a no-value-property response in standard mode when EnrichOutput is used' {
+            $entityBody = [PSCustomObject]@{
+                '@odata.context' = 'https://graph.microsoft.com/v1.0/$metadata#users/$entity'
+                id               = 'u1'
+                displayName      = 'Alice'
+            }
+
+            Mock Invoke-MgGraphRequest {
+                New-BatchResponse -Responses @(New-ResponseEntry -Id '1' -Status 200 -Body $entityBody)
+            } -ModuleName $ModuleName
+
+            $items = @(New-BatchItem -Id '1' -Url 'users/u1' -Method 'GET')
+            $result = Invoke-ptGraphBatchRequest -BatchItems $items -EnrichOutput -pagination 'none'
+            $result.'@batchMetadata' | Should -Not -BeNullOrEmpty
+            $result.'@batchMetadata'.requestId | Should -Be '1'
         }
     }
 

@@ -56,6 +56,17 @@ Describe 'New-ptGraphRequestItem' {
             $item.url | Should -Match '\$top=50'
             $item.url | Should -Match 'custom=x'
         }
+
+        It 'warns when an OData function param overrides a different value already in the URL' {
+            $item = New-ptGraphRequestItem -url '/users?$top=5' -pageSize 10 -WarningVariable warnings 3>$null
+            $warnings | Should -Match '\$top'
+            $item.url | Should -Match '\$top=10'
+        }
+
+        It 'does not warn when the OData function param matches the existing URL value' {
+            New-ptGraphRequestItem -url '/users?$top=10' -pageSize 10 -WarningVariable warnings 3>$null | Out-Null
+            $warnings | Should -BeNullOrEmpty
+        }
     }
 
     Context 'Headers and body handling' {
@@ -89,6 +100,35 @@ Describe 'New-ptGraphRequestItem' {
 
         It 'throws for unsupported body type' {
             { New-ptGraphRequestItem -url '/users' -method POST -body 123 } | Should -Throw
+        }
+
+        It 'warns when -ContentType and headers Content-Type differ' {
+            $item = New-ptGraphRequestItem -url '/users' -method POST -body '{}' `
+                -ContentType 'application/json' -headers @{ 'Content-Type' = 'text/plain' } `
+                -WarningVariable warnings 3>$null
+            $warnings | Should -Match 'Content-Type'
+            $item.headers.'Content-Type' | Should -Be 'application/json'
+        }
+
+        It 'does not warn when ContentType matches the Content-Type header' {
+            New-ptGraphRequestItem -url '/users' -method POST -body '{}' `
+                -ContentType 'application/json' -headers @{ 'Content-Type' = 'application/json' } `
+                -WarningVariable warnings 3>$null | Out-Null
+            $warnings | Should -BeNullOrEmpty
+        }
+
+        It 'warns when a string body is not valid JSON and no ContentType override is set' {
+            $item = New-ptGraphRequestItem -url '/users' -method POST -body 'not-valid-json' `
+                -WarningVariable warnings 3>$null
+            ($warnings -join ' ') | Should -Match 'valid JSON'
+            $item.body | Should -Be 'not-valid-json'
+        }
+
+        It 'does not warn about invalid JSON when ContentType is set to a non-JSON type' {
+            New-ptGraphRequestItem -url '/users' -method POST -body 'key=value' `
+                -ContentType 'application/x-www-form-urlencoded' `
+                -WarningVariable warnings 3>$null | Out-Null
+            $warnings | Should -BeNullOrEmpty
         }
     }
 
