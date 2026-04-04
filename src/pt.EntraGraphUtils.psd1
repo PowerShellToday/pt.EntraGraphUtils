@@ -1,6 +1,6 @@
 @{
     RootModule        = 'pt.EntraGraphUtils.psm1'
-    ModuleVersion     = '1.0.0-RC1'
+    ModuleVersion     = '1.0.1'
     GUID              = 'd8f5e6c3-a2b1-4e78-9d0f-2b3c4d5e6f7a'
     Author            = 'PowerShell.Today'
     CompanyName       = 'PowerShell.Today'
@@ -21,7 +21,7 @@
 
     PrivateData       = @{
         PSData = @{
-            Prerelease   = ''
+            Prerelease   = 'RC1'
             Tags         = @('Entra', 'Graph', 'AzureAD', 'Microsoft365', 'EntraID', 'GraphAPI', 'Batch', 'JsonBatching', 'MicrosoftGraph', 'REST', 'PowerShellToday')
             LicenseUri   = 'https://github.com/PowerShellToday/pt.EntraGraphUtils/blob/main/LICENSE'
             ProjectUri   = 'https://github.com/PowerShellToday/pt.EntraGraphUtils'
