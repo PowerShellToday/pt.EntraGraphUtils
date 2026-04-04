@@ -35,22 +35,7 @@ jobs:
             "changed=false" | Out-File $env:GITHUB_OUTPUT -Append
           }
 
-      # Step 2 — PSScriptAnalyzer lint (runs on every PR, not just src/ changes)
-      - name: PSScriptAnalyzer lint
-        if: steps.src_changed.outputs.changed == 'true'
-        shell: pwsh
-        run: |
-          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -ErrorAction Stop
-
-          $results = Invoke-ScriptAnalyzer -Path ./src -Recurse -Severity Error, Warning
-          if ($results) {
-            $results | Format-Table -AutoSize
-            Write-Error "PSScriptAnalyzer found $($results.Count) issue(s)."
-            exit 1
-          }
-          Write-Host "PSScriptAnalyzer: no issues found."
-
-      # Step 3 — Version bump check
+      # Step 2 — Version bump check
       # PR branch version read from disk; main branch version fetched via GitHub Contents API
       - name: Validate version bump
         if: steps.src_changed.outputs.changed == 'true'

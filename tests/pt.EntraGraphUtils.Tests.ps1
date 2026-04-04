@@ -99,6 +99,22 @@ Describe 'Help URI' -Skip:(-not $env:MYMODULE_PATH) {
     }
 }
 
+Describe 'PSScriptAnalyzer' {
+    BeforeDiscovery {
+        $RepoRoot = Split-Path $PSScriptRoot -Parent
+        $SrcRoot  = Join-Path $RepoRoot 'src'
+        $script:AnalyzerFiles = Get-ChildItem $SrcRoot -Filter *.ps1 -Recurse |
+            ForEach-Object { @{ File = $_ } }
+    }
+
+    Context '<File.Name>' -ForEach $script:AnalyzerFiles {
+        It 'has no PSScriptAnalyzer errors or warnings' {
+            $results = Invoke-ScriptAnalyzer -Path $File.FullName -Severity Error, Warning
+            $results | Should -BeNullOrEmpty -Because ($results | ForEach-Object { "$($_.RuleName): $($_.Message)" } | Out-String)
+        }
+    }
+}
+
 Describe 'Test file coverage' {
     BeforeDiscovery {
         $RepoRoot   = Split-Path $PSScriptRoot -Parent
