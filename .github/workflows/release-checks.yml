@@ -90,7 +90,7 @@ jobs:
         if: steps.src_changed.outputs.changed == 'true'
         shell: pwsh
         run: |
-          $newVersion = '${{ steps.version_check.outputs.new_version }}'
+          $newVersion = '${{ steps.version_check.outputs.new_version }}' -replace '-.*$', ''
           $content    = Get-Content ./CHANGELOG.md -Raw
           $lines      = Get-Content ./CHANGELOG.md
 
