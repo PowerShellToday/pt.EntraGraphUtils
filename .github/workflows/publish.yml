@@ -102,9 +102,10 @@ jobs:
               -InstallationPolicy Trusted `
               -Credential        $cred
           Publish-Module -Path './dist/pt.EntraGraphUtils' `
-              -Repository  'GitHubPackages' `
-              -NuGetApiKey $env:GITHUB_TOKEN `
-              -Credential  $cred `
+              -Repository           'GitHubPackages' `
+              -NuGetApiKey          $env:GITHUB_TOKEN `
+              -Credential           $cred `
+              -SkipDependenciesCheck `
               -Verbose
       - name: Publish to PSGallery
         if: steps.check.outputs.skip == 'false'
