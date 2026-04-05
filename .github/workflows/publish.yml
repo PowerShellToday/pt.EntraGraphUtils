@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to build (e.g. 0.0.1-test)'
+        description: "Version to build (e.g. 0.0.1-test)"
         required: true
-        default: '0.0.1-test'
+        default: "0.0.1-test"
 
 jobs:
   publish:
@@ -19,7 +19,7 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # Step 1 — Determine version from manifest or manual input
       - name: Read version
@@ -106,11 +106,10 @@ jobs:
               -NuGetApiKey $env:GITHUB_TOKEN `
               -Credential  $cred `
               -Verbose
-
-      # - name: Publish to PSGallery
-      #   if: steps.check.outputs.skip == 'false'
-      #   shell: pwsh
-      #   env:
-      #     PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-      #   run: |
-      #     Publish-Module -Path './dist/pt.EntraGraphUtils' -NuGetApiKey $env:PSGALLERY_API_KEY -Verbose
+          - name: Publish to PSGallery
+            if: steps.check.outputs.skip == 'false'
+            shell: pwsh
+            env:
+              PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+            run: |
+              Publish-Module -Path './dist/pt.EntraGraphUtils' -NuGetApiKey $env:PSGALLERY_API_KEY -Verbose

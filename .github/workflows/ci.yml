@@ -23,7 +23,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install PlatyPS
         shell: pwsh
@@ -58,21 +58,21 @@ jobs:
 
       - name: Upload dev test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-results-dev-${{ matrix.os }}
           path: testResults-dev.xml
 
       - name: Upload compiled test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-results-compiled-${{ matrix.os }}
           path: testResults-compiled.xml
 
       - name: Upload dist artifact
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dist-${{ matrix.os }}
           path: dist/

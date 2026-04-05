@@ -109,6 +109,15 @@ pt.EntraGraphUtils/
 └─ docs.ps1             PlatyPS helper (-Generate, -Update, -BuildHelp)
 ```
 
+## Attributions
+
+The following internal helper functions are adapted from the
+[Utility.PS](https://github.com/jazuntee/Utility.PS) project by Jason Thompson (jazuntee),
+used under the MIT License:
+
+- `ConvertFrom-QueryString`
+- `ConvertTo-QueryString`
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
