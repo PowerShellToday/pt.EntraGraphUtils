@@ -26,7 +26,7 @@
             LicenseUri                 = 'https://github.com/PowerShellToday/pt.EntraGraphUtils/blob/main/LICENSE'
             ProjectUri                 = 'https://github.com/PowerShellToday/pt.EntraGraphUtils'
             ReleaseNotes               = 'General-purpose Graph API functions: Invoke-ptGraphBatchRequest (JSON batch with auto-retry and pagination), Invoke-ptGraphRequest (individual requests), and New-ptGraphRequestItem (request object builder with OData parameter support).'
-            ExternalModuleDependencies = @()
+            ExternalModuleDependencies = @('Microsoft.Graph.Authentication')
         }
     }
 }

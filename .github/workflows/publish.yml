@@ -90,7 +90,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          Install-Module Microsoft.Graph.Authentication -Scope CurrentUser -Force
           $owner   = '${{ github.repository_owner }}'.ToLower()
           $feedUrl = "https://nuget.pkg.github.com/$owner/index.json"
           $cred    = [PSCredential]::new(
