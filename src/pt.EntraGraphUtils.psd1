@@ -21,7 +21,7 @@
 
     PrivateData       = @{
         PSData = @{
-            Prerelease                 = 'RC6c'
+            Prerelease                 = 'RC6d'
             Tags                       = @('Entra', 'Graph', 'AzureAD', 'Microsoft365', 'EntraID', 'GraphAPI', 'Batch', 'JsonBatching', 'MicrosoftGraph', 'REST', 'PowerShellToday')
             LicenseUri                 = 'https://github.com/PowerShellToday/pt.EntraGraphUtils/blob/main/LICENSE'
             ProjectUri                 = 'https://github.com/PowerShellToday/pt.EntraGraphUtils'
