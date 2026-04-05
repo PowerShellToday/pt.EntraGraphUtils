@@ -17,6 +17,8 @@ jobs:
     permissions:
       packages: write
       contents: write
+    env:
+      MODULE_NAME: ${{ github.event.repository.name }}
 
     steps:
       - uses: actions/checkout@v6
@@ -29,7 +31,7 @@ jobs:
           if ('${{ github.event.inputs.version }}') {
             $full = '${{ github.event.inputs.version }}'
           } else {
-            $manifest = Import-PowerShellDataFile './src/pt.EntraGraphUtils.psd1'
+            $manifest = Import-PowerShellDataFile "./src/$env:MODULE_NAME.psd1"
             $semver   = $manifest.ModuleVersion
             $pre      = $manifest.PrivateData.PSData.Prerelease
             $full     = if ($pre) { "$semver-$pre" } else { $semver }
@@ -77,12 +79,35 @@ jobs:
         if: steps.check.outputs.skip == 'false'
         shell: pwsh
         run: |
-          $manifest = Test-ModuleManifest -Path './dist/pt.EntraGraphUtils/pt.EntraGraphUtils.psd1'
+          $manifest = Test-ModuleManifest -Path "./dist/$env:MODULE_NAME/$env:MODULE_NAME.psd1"
           if (-not $manifest) {
             Write-Error "Manifest validation failed."
             exit 1
           }
           Write-Host "Manifest OK — v$($manifest.Version)"
+
+      - name: Publish to PSGallery
+        if: steps.check.outputs.skip == 'false'
+        shell: pwsh
+        env:
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+        run: |
+          # Publish first — PSGallery can resolve Microsoft.Graph.Authentication from its
+          # own feed, so RequiredModules works correctly and ExternalModuleDependencies
+          # must be empty for the dependency to appear in gallery metadata.
+          Publish-Module -Path "./dist/$env:MODULE_NAME" -NuGetApiKey $env:PSGALLERY_API_KEY -Verbose
+
+      - name: Patch manifest for GitHub Packages
+        if: steps.check.outputs.skip == 'false'
+        shell: pwsh
+        run: |
+          # GitHub Packages does not host Microsoft.Graph.Authentication, so mark it as
+          # external before publishing there — Update-ModuleManifest handles non-empty arrays.
+          $psd1         = "./dist/$env:MODULE_NAME/$env:MODULE_NAME.psd1"
+          $externalDeps = (Import-PowerShellDataFile -Path $psd1).RequiredModules
+          if ($externalDeps) {
+            Update-ModuleManifest -Path $psd1 -ExternalModuleDependencies $externalDeps
+          }
 
       - name: Publish to GitHub Packages
         if: steps.check.outputs.skip == 'false'
@@ -90,9 +115,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # ExternalModuleDependencies is already set in the manifest — GitHub Packages
-          # does not host Microsoft.Graph.Authentication so Publish-Module must not try
-          # to resolve it there.
           $owner   = '${{ github.repository_owner }}'.ToLower()
           $feedUrl = "https://nuget.pkg.github.com/$owner/index.json"
           $cred    = [PSCredential]::new(
@@ -104,25 +126,8 @@ jobs:
               -PublishLocation   $feedUrl `
               -InstallationPolicy Trusted `
               -Credential        $cred
-          Publish-Module -Path './dist/pt.EntraGraphUtils' `
+          Publish-Module -Path "./dist/$env:MODULE_NAME" `
               -Repository  'GitHubPackages' `
               -NuGetApiKey $env:GITHUB_TOKEN `
               -Credential  $cred `
               -Verbose
-
-      - name: Patch manifest for PSGallery
-        if: steps.check.outputs.skip == 'false'
-        shell: pwsh
-        run: |
-          # PSGallery hosts Microsoft.Graph.Authentication, so it must be a proper NuGet
-          # dependency — clear ExternalModuleDependencies before publishing there.
-          $psd1 = './dist/pt.EntraGraphUtils/pt.EntraGraphUtils.psd1'
-          Update-ModuleManifest -Path $psd1 -ExternalModuleDependencies @()
-
-      - name: Publish to PSGallery
-        if: steps.check.outputs.skip == 'false'
-        shell: pwsh
-        env:
-          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-        run: |
-          Publish-Module -Path './dist/pt.EntraGraphUtils' -NuGetApiKey $env:PSGALLERY_API_KEY -Verbose

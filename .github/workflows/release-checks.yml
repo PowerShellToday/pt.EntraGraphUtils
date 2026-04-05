@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      MODULE_NAME: ${{ github.event.repository.name }}
 
     steps:
       - uses: actions/checkout@v6
@@ -46,14 +48,14 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           # PR branch version (on disk)
-          $prData       = Import-PowerShellDataFile './src/pt.EntraGraphUtils.psd1'
+          $prData       = Import-PowerShellDataFile "./src/$env:MODULE_NAME.psd1"
           $prVersion    = [version]$prData.ModuleVersion
           $prPrerelease = $prData.PrivateData.PSData.Prerelease
           $prFull       = if ($prPrerelease) { "$prVersion-$prPrerelease" } else { "$prVersion" }
           Write-Host "PR branch version: $prFull"
 
           # main branch version (via GitHub Contents API — avoids a second checkout)
-          $apiUrl  = "https://api.github.com/repos/$env:REPO/contents/src/pt.EntraGraphUtils.psd1?ref=main"
+          $apiUrl  = "https://api.github.com/repos/$env:REPO/contents/src/$env:MODULE_NAME.psd1?ref=main"
           $headers = @{
             Authorization = "Bearer $env:GITHUB_TOKEN"
             Accept        = 'application/vnd.github.v3.raw'
@@ -77,7 +79,7 @@ jobs:
           Version bump required.
             main branch : $mainFull
             PR branch   : $prFull
-          Either ModuleVersion or Prerelease in src/pt.EntraGraphUtils.psd1 must change.
+          Either ModuleVersion or Prerelease in src/$env:MODULE_NAME.psd1 must change.
           "@
             exit 1
           }
