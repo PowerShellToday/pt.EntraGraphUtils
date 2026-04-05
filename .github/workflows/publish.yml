@@ -90,6 +90,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # ExternalModuleDependencies is already set in the manifest — GitHub Packages
+          # does not host Microsoft.Graph.Authentication so Publish-Module must not try
+          # to resolve it there.
           $owner   = '${{ github.repository_owner }}'.ToLower()
           $feedUrl = "https://nuget.pkg.github.com/$owner/index.json"
           $cred    = [PSCredential]::new(
@@ -106,6 +109,16 @@ jobs:
               -NuGetApiKey $env:GITHUB_TOKEN `
               -Credential  $cred `
               -Verbose
+
+      - name: Patch manifest for PSGallery
+        if: steps.check.outputs.skip == 'false'
+        shell: pwsh
+        run: |
+          # PSGallery hosts Microsoft.Graph.Authentication, so it must be a proper NuGet
+          # dependency — clear ExternalModuleDependencies before publishing there.
+          $psd1 = './dist/pt.EntraGraphUtils/pt.EntraGraphUtils.psd1'
+          Update-ModuleManifest -Path $psd1 -ExternalModuleDependencies @()
+
       - name: Publish to PSGallery
         if: steps.check.outputs.skip == 'false'
         shell: pwsh
