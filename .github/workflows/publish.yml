@@ -106,10 +106,10 @@ jobs:
               -NuGetApiKey $env:GITHUB_TOKEN `
               -Credential  $cred `
               -Verbose
-          - name: Publish to PSGallery
-            if: steps.check.outputs.skip == 'false'
-            shell: pwsh
-            env:
-              PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-            run: |
-              Publish-Module -Path './dist/pt.EntraGraphUtils' -NuGetApiKey $env:PSGALLERY_API_KEY -Verbose
+      - name: Publish to PSGallery
+        if: steps.check.outputs.skip == 'false'
+        shell: pwsh
+        env:
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+        run: |
+          Publish-Module -Path './dist/pt.EntraGraphUtils' -NuGetApiKey $env:PSGALLERY_API_KEY -Verbose
