@@ -23,6 +23,15 @@ Connect-MgGraph -Scopes 'User.Read.All', 'Group.Read.All'
 | [Invoke-ptGraphRequest](Invoke-ptGraphRequest.md) | Execute a single Graph API request with automatic retry and pagination |
 | [New-ptGraphRequestItem](New-ptGraphRequestItem.md) | Build a Graph request item (for batch or individual use) with OData parameter support |
 
+## Attributions
+
+The following internal helper functions are adapted from the
+[Utility.PS](https://github.com/jazuntee/Utility.PS) project by Jason Thompson (jazuntee),
+used under the MIT License:
+
+- `ConvertFrom-QueryString`
+- `ConvertTo-QueryString`
+
 ## Generating / Updating Documentation
 
 This module uses [PlatyPS](https://github.com/PowerShell/platyPS) for help generation.

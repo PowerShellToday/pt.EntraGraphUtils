@@ -66,5 +66,15 @@ LONG DESCRIPTION
     Get-Help Invoke-ptGraphBatchRequest             -Full
     Get-Help about_pt.EntraGraphUtils_GraphBatching -Full
 
+ATTRIBUTIONS
+
+    The following internal helper functions are adapted from the Utility.PS project
+    by Jason Thompson (jazuntee), used under the MIT License:
+
+        ConvertFrom-QueryString
+        ConvertTo-QueryString
+
+    Source: https://github.com/jazuntee/Utility.PS
+
 KEYWORDS
     Graph, MicrosoftGraph, Entra, EntraID, AzureAD, REST, API, Batch, JsonBatching
