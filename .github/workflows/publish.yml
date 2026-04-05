@@ -106,7 +106,6 @@ jobs:
               -NuGetApiKey $env:GITHUB_TOKEN `
               -Credential  $cred `
               -Verbose
-
       - name: Publish to PSGallery
         if: steps.check.outputs.skip == 'false'
         shell: pwsh
